@@ -31,7 +31,7 @@ export default function Main(props) {
   const [userIdInputField, setUserIdInputField] = useState();
   const { card } = useParams();
 
-  const {notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+  const {userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
   const [actualTime, setActualTime] = useState(null);
   const [actualShift, setActualShift] = useState(null);
   const checkboxesContainerRef = useRef(null)
@@ -54,106 +54,6 @@ export default function Main(props) {
     [13*3600 + 45*60 + 1, 21*3600 + 45*60],
     [21*3600 + 45*60 + 1, 5*3600 + 45*60 - 1]
   ]
-
-
-
-
-
-/*
-  function saveChanges(postpone) {
-    var endTime = 0;
-      var on = -1;
-        if(orderPlace != "P1") {
-          on = orderNumber
-        }
-
-        if(isApplied) {
-          endTime = getUnixTime();
-          var body = JSON.stringify({
-            "token": props.userId,
-            "endTime": endTime,
-            "name": props.name,
-            "surname": props.surname,
-            "postpone": postpone,
-            "fixId": fixId
-          });
-        } else {
-          var body = JSON.stringify({
-            "token": props.userId,
-            "leak": JSON.stringify(leaks),
-            "startTime": getUnixTime(),
-            "responsiblePerson": responsiblePerson,
-            "selectionTime": loginTime,
-            "orderNumber": on,
-            "workplace": workplace,
-            "name": props.name,
-            "surname": props.surname,
-            "postpone": postpone,
-            "fixId": fixId
-
-          });
-        }
-        
-
-        fetch('/api/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: body
-      })
-      .then(response => response.json())
-      .then(data => {
-        if(data['result'] == "success") {
-          if(postpone) {
-            setIsComplete(true);
-          } else if(!isApplied) {
-            setIsApplied(true);
-            setLoginTime(Math.floor(Date.now() / 1000))
-            console.log("Successfully saved data: " + data);
-            setFixId(data['fixId']);
-          } else {
-            setIsComplete(true);
-          }
-        } else {
-          console.log("Error saving data: " + data);
-        }
-      })
-      .catch(error => {
-        console.error(error);
-      });
-  }
-*/
-
-/*
-
-useEffect(() => {
-  if(props.userId != null) {
-    fetchData();
-  }
-}, [props.userId])
-
-
-function fetchData() {
-  fetch('/api/get', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-  })
-  .then(response => response.json())
-  .then(data => {
-    if(data['result'] == "success") {
-      console.log("Successfully saved data: " + data);
-    } else {
-      console.log("Error saving data: " + data);
-    }
-  })
-  .catch(error => {
-    console.error(error);
-  });
-}
-*/
   
 
 
@@ -224,10 +124,60 @@ function fetchData() {
 
 
   function saveData() {
-    const toolsWithoutB = selectedMachines.forEach(element => {
-      
-    }); toolsData.filter(([key, value]) => value !== 'b');
-  }
+    let toolsToSave = [];
+
+for (const category in toolsData) {
+    if (toolsData.hasOwnProperty(category)) {
+        for (const tool in toolsData[category]) {
+            if (toolsData[category].hasOwnProperty(tool) && toolsData[category][tool] !== 'b') {
+                // Add the tool to the list
+                toolsToSave.push({ category, tool, value: toolsData[category][tool] });
+            }
+        }
+    }
+}
+
+  console.log("toolsToSave: ", toolsToSave);
+
+  
+
+
+
+
+
+
+
+
+  fetch('/api/save', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "userId": userId,
+      "userName": name,
+      "userSurname": surname,
+      "data": toolsToSave
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    if(data['result'] == "success") {
+      alert("Zapisano!")
+    } else {
+      props.notify("error", "Wystąpił błąd podczas zapisywania danych!")
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    props.notify("error", "contact")
+  })
+  .finally(() => {
+    props.hideLoadingScreen();
+  });
+}
+
 
 
   return (
