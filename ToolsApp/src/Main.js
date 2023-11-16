@@ -223,6 +223,13 @@ function fetchData() {
   }, [shifts])
 
 
+  function saveData() {
+    const toolsWithoutB = selectedMachines.forEach(element => {
+      
+    }); toolsData.filter(([key, value]) => value !== 'b');
+  }
+
+
   return (
       <Box display="flex" flexDirection="column" justifyContent='center' alignItems='center'>
     { props.userId != null ? (
@@ -238,6 +245,7 @@ function fetchData() {
             <Typography variant='h5'>Aktualna zmiana:</Typography>
             <Typography variant='h6'>{ actualTime || "Brak informacji o czasie" }</Typography>
             <Typography variant='h6'>{ actualShift !== null && actualShift !== undefined ? [(actualShift + 1)].map(() => { return "I" } ) + " zmiana" : "Brak danych" }</Typography>
+            <Button variant='contained' sx={{ mt: 5 }} onClick={() => saveData()}>Zapisz wyniki dla aktualnej zmiany</Button>
             </Paper>
           <Paper elevation={3} sx={{ textAlign: 'center', px: '50px', py: '50px' }}>
             <Typography variant='h5'>Wybrane maszyny:</Typography>
