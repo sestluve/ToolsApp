@@ -40,7 +40,8 @@ export default function CheckList(props) {
 
 
     useEffect(() => {
-        const keys = Object.keys(toolsData[selectedMachines[machineName]])
+      const currentMachineData = toolsData[selectedMachines[machineName]];
+      const keys = currentMachineData ? Object.keys(currentMachineData) : [];
 
         var tempItems = [];
 

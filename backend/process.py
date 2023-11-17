@@ -69,6 +69,7 @@ def login():
     cur = conn.cursor()
 
     if token == "admin":
+        '''
         password = jsonData.get('password')
         if not password:
             return jsonify({'result': 'error', 'message': 'You have to enter a password!'})
@@ -83,6 +84,7 @@ def login():
             return jsonify({'result': 'success'})
         else:
             return jsonify({'result': 'error', 'message': 'Incorrect password'})
+        '''
     else:
         # Execute a query to check if the user exists
         cur.execute("select * from dbo.RCP_Karty_Pracownika inner join dbo.Pracownik on dbo.Pracownik.id = dbo.RCP_Karty_Pracownika.IDPracownika inner join dbo.RCP_Karty on dbo.RCP_Karty.ID = IDKarty where NumerLogiczny=?", (token, ))
@@ -92,9 +94,18 @@ def login():
 
         # Check if any results were returned
         if result:
+            shift = 0  # First shift represented by index 0
+
             conn2 = connect_db_apps()
             cur2 = conn2.cursor()
-            cur2.execute("SELECT * FROM tools")
+            cur2.execute("""
+    SELECT t.*, 
+           tp.tool_state
+    FROM tools t
+    LEFT JOIN tools_presence tp ON t.tool_name = tp.tool_name 
+        AND DATE(tp.timestamp) = CURRENT_DATE 
+        AND tp.shift = 0
+""", (shift,))
             result2 = cur2.fetchall()
 
             # Process the tools data
@@ -164,15 +175,38 @@ def save():
 
     if not data:
         return jsonify({'result': 'error', 'message': 'Data is incomplete!'})
-    num_rows_affected = cur.execute("INSERT INTO tools_presence (user_id, user_name, user_surname, workplace, tool_name, tool_state, shift) VALUES (%s) RETURNING id;", (userId, userName, userSurname ))
     
-    result = cur.fetchone()
-    if(result is None):
-        return jsonify({'result': 'error', 'message': 'Something went wrong!'})
-    recordId = result[0]
-    
-    conn.commit()
-    return jsonify({'result': 'success', 'recordId': recordId})
+    try:
+        # Start a transaction
+        conn.autocommit = False
+
+        # Prepare the INSERT statement
+        query = "INSERT INTO tools_presence (user_id, user_name, user_surname, workplace, tool_name, tool_state, shift) VALUES "
+
+        # Create a list of value tuples for each tool
+        values = []
+        for tool in data:
+            value_tuple = (userId, userName, userSurname, tool['workplace'], tool['tool_name'], tool['tool_state'], 0)  # Shift is always 0
+            values.append(value_tuple)
+
+        # Add the value tuples to the query using a parameterized format
+        args_str = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s,%s)", x).decode('utf-8') for x in values)
+        query += args_str
+
+        # Execute the query
+        cur.execute(query)
+
+        # Commit the transaction
+        conn.commit()
+
+        return jsonify({'result': 'success'})
+    except Exception as e:
+        # Rollback in case of error
+        conn.rollback()
+        return jsonify({'result': 'error', 'message': 'Failed to insert data: ' + str(e)})
+    finally:
+        # Set autocommit back to True
+        conn.autocommit = True
 
 
 

@@ -141,7 +141,11 @@ export default function Main(props) {
                         break;
                     } else {
                         // Add the tool to the list
-                        toolsToSave.push({ category: machine, tool, value: toolsData[machine][tool] });
+                        toolsToSave.push({ 
+                          workplace: machine, // Assuming 'machine' is equivalent to 'workplace'
+                          tool_name: tool,
+                          tool_state: toolsData[machine][tool]
+                         });
                     }
                 }
             }
@@ -318,7 +322,7 @@ export default function Main(props) {
 
                 <AppBar position="static" style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }} sx={{ p: 2, pl: 5, pr: 5 }}>
                   <BuildIcon />
-                  <Typography variant='h6'>
+                  <Typography variant='h6' sx={{ pl: 5, pr: 5 }}>
                     {selectedMachines[machineName]}
                   </Typography>
                     <ToggleButton onClick={() => {
