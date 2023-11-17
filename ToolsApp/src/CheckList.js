@@ -52,6 +52,7 @@ export default function CheckList(props) {
               const dbState = toolObject.db_state;
               const state = toolObject.state;
               const labelId = `select-label-${machineName}-${name}`;
+              const id = index + i;
 
               return (
                 <ListItem
@@ -60,34 +61,41 @@ export default function CheckList(props) {
                   secondaryAction={<FormControl fullWidth>
                     <ToggleButtonGroup
                       orientation="horizontal"
-                      value={toolsData && toolsData[selectedMachines[machineName]] && toolsData[selectedMachines[machineName]][index] && toolsData[selectedMachines[machineName]][index][state]}
+                      value={currentMachineData && currentMachineData[id] && currentMachineData[id].state}
                       exclusive
                       onChange={(e, newValue) => {
                         console.log("Changing to: ", newValue);
                         // Create a new state object by spreading the old state
 
-                        if(dbState !== "b") {
+                        
+                        if(dbState == "b") {
                           return;
                         }
+                        
 
                         if (newValue == null) return;
 
-                        const updatedToolsData = {
-                          ...toolsData,
-                          [selectedMachines[machineName]]: {
-                            ...toolsData[selectedMachines[machineName]],
-                            [index]: {
-                              ...toolsData[selectedMachines[machineName]][index],
+                        setToolsData(prevToolsData => {
+                          // Deep copy the array for the specific machine
+                          const machineTools = prevToolsData[selectedMachines[machineName]].map(tool => ({ ...tool }));
+                        
+                          // Update the specific tool in the array
+                          if (machineTools[id]) {
+                            machineTools[id] = {
+                              ...machineTools[id],
                               state: newValue
-                            }
-                            
+                            };
                           }
-                        };
-                        // Set the new state
-                        setToolsData(updatedToolsData);
+                        
+                          // Return the updated state
+                          return {
+                            ...prevToolsData,
+                            [selectedMachines[machineName]]: machineTools
+                          };
+                        });
                       } }
                     >
-                        {toolsData[selectedMachines[machineName][index]][state] == "b" && (
+                        {toolsData[selectedMachines[machineName]][id].state == "b" && (
                           <CustomToggleButton value="b" title='Wybierz opcje' size='small'>
                         <QuestionMarkIcon color='warning' />
                       </CustomToggleButton>

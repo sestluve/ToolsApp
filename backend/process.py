@@ -116,6 +116,9 @@ def login():
                 tool_state = row[3]  # Replace with the index of the tool state column
                 if group not in grouped_tools:
                     grouped_tools[group] = []
+
+                if tool_state is None:
+                    tool_state = "b"
                 grouped_tools[group].append({'name': tool_name, 'db_state': tool_state})
 
 
