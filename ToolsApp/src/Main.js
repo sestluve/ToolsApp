@@ -123,22 +123,69 @@ export default function Main(props) {
   }, [shifts])
 
 
+
+
+
+
+
   function saveData() {
     let toolsToSave = [];
+    let invalidToolFound = false;
 
-for (const category in toolsData) {
-    if (toolsData.hasOwnProperty(category)) {
-        for (const tool in toolsData[category]) {
-            if (toolsData[category].hasOwnProperty(tool) && toolsData[category][tool] !== 'b') {
-                // Add the tool to the list
-                toolsToSave.push({ category, tool, value: toolsData[category][tool] });
+    for (const machine of selectedMachines) {
+        if (toolsData.hasOwnProperty(machine)) {
+            for (const tool in toolsData[machine]) {
+                if (toolsData[machine].hasOwnProperty(tool)) {
+                    if (toolsData[machine][tool] === 'b') {
+                        invalidToolFound = true;
+                        break;
+                    } else {
+                        // Add the tool to the list
+                        toolsToSave.push({ category: machine, tool, value: toolsData[machine][tool] });
+                    }
+                }
             }
         }
+        if (invalidToolFound) {
+            break;
+        }
     }
-}
 
-  console.log("toolsToSave: ", toolsToSave);
+    if (invalidToolFound) {
+        alert("Musisz zaznaczyć wszystkie narzędzia!");
+    } else {
+        console.log("toolsToSave: ", toolsToSave);
 
+        fetch('/api/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "userId": userId,
+            "userName": name,
+            "userSurname": surname,
+            "data": toolsToSave
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if(data['result'] == "success") {
+            alert("Zapisano!")
+          } else {
+            props.notify("error", "Wystąpił błąd podczas zapisywania danych!")
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          props.notify("error", "contact")
+        })
+        .finally(() => {
+          props.hideLoadingScreen();
+        });
+        // ... rest of the function remains the same
+    }
   
 
 
@@ -148,34 +195,7 @@ for (const category in toolsData) {
 
 
 
-  fetch('/api/save', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      "userId": userId,
-      "userName": name,
-      "userSurname": surname,
-      "data": toolsToSave
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log(data);
-    if(data['result'] == "success") {
-      alert("Zapisano!")
-    } else {
-      props.notify("error", "Wystąpił błąd podczas zapisywania danych!")
-    }
-  })
-  .catch(error => {
-    console.error(error);
-    props.notify("error", "contact")
-  })
-  .finally(() => {
-    props.hideLoadingScreen();
-  });
+  
 }
 
 
