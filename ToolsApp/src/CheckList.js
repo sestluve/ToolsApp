@@ -41,41 +41,53 @@ export default function CheckList(props) {
 
     useEffect(() => {
       const currentMachineData = toolsData[selectedMachines[machineName]];
-      const keys = currentMachineData ? Object.keys(currentMachineData) : [];
 
         var tempItems = [];
 
-            for(let i = 0; i < keys.length; i += maxItemsPerColumn) {
+            for(let i = 0; i < currentMachineData.length; i += maxItemsPerColumn) {
                 tempItems?.push(
                     <List sx={{ bgcolor: 'background.paper' }}>
-            {keys?.slice(i, i + maxItemsPerColumn).map((value) => {
-              const labelId = `select-label-${machineName}-${value}`;
+            {currentMachineData?.slice(i, i + maxItemsPerColumn).map((toolObject, index) => {
+              const name = toolObject.name;
+              const dbState = toolObject.db_state;
+              const state = toolObject.state;
+              const labelId = `select-label-${machineName}-${name}`;
 
               return (
                 <ListItem
-                  key={value}
+                  key={name}
                   sx={{ p: 1, width: 450 }}
                   secondaryAction={<FormControl fullWidth>
                     <ToggleButtonGroup
                       orientation="horizontal"
-                      value={toolsData && toolsData[selectedMachines[machineName]] && toolsData[selectedMachines[machineName]][value]}
+                      value={toolsData && toolsData[selectedMachines[machineName]] && toolsData[selectedMachines[machineName]][index] && toolsData[selectedMachines[machineName]][index][state]}
                       exclusive
                       onChange={(e, newValue) => {
                         console.log("Changing to: ", newValue);
                         // Create a new state object by spreading the old state
+
+                        if(dbState !== "b") {
+                          return;
+                        }
+
                         if (newValue == null) return;
+
                         const updatedToolsData = {
                           ...toolsData,
                           [selectedMachines[machineName]]: {
                             ...toolsData[selectedMachines[machineName]],
-                            [value]: newValue
+                            [index]: {
+                              ...toolsData[selectedMachines[machineName]][index],
+                              state: newValue
+                            }
+                            
                           }
                         };
                         // Set the new state
                         setToolsData(updatedToolsData);
                       } }
                     >
-                        {toolsData[selectedMachines[machineName]][value] == "b" && (
+                        {toolsData[selectedMachines[machineName][index]][state] == "b" && (
                           <CustomToggleButton value="b" title='Wybierz opcje' size='small'>
                         <QuestionMarkIcon color='warning' />
                       </CustomToggleButton>
@@ -100,7 +112,7 @@ export default function CheckList(props) {
 
                   </FormControl>}
                 >
-                  <ListItemText id={labelId} primary={value} />
+                  <ListItemText id={labelId} primary={name} />
                 </ListItem>
 
               );

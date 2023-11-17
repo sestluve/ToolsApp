@@ -113,9 +113,10 @@ def login():
             for row in result2:
                 group = row[1]  # Replace with the index of the group column
                 tool_name = row[2]  # Replace with the index of the tool name column
+                tool_state = row[3]  # Replace with the index of the tool state column
                 if group not in grouped_tools:
                     grouped_tools[group] = []
-                grouped_tools[group].append(tool_name)
+                grouped_tools[group].append({'name': tool_name, 'db_state': tool_state})
 
 
             return jsonify({'result': 'success', 'id': result[9], 'name': result[8], 'surname': result[7], 'data': grouped_tools})

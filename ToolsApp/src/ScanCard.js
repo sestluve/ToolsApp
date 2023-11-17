@@ -10,16 +10,28 @@ import { useNavigate } from "react-router-dom";
 import { MyContext } from './App';
 
 function initializeToolsData(data) {
-  var tempToolsData = data;
-  Object.keys(tempToolsData).forEach(machineName => {
-      tempToolsData[machineName] = tempToolsData[machineName].reduce((acc, tool) => {
-          acc[tool] = "b";
-          return acc;
-      }, {});
-  });
-  console.log("toolsData: " + JSON.stringify(tempToolsData));
-  return(tempToolsData);
+  var groupedTools = {};
+
+  // Iterate over each machine name
+  for (let machineName in data) {
+      if (data.hasOwnProperty(machineName)) {
+          // Initialize an array for each machine
+          groupedTools[machineName] = [];
+
+          // Iterate over each tool in the machine
+          data[machineName].forEach(tool => {
+              groupedTools[machineName].push({
+                  name: tool.name,
+                  dbState: tool.db_state,
+                  state: tool.db_state // Initially, the state is the same as the dbState
+              });
+          });
+      }
   }
+
+  console.log("Grouped Tools Data: ", groupedTools);
+  return groupedTools;
+}
 
 export default function ScanCard(props) {
     const idTextField = useRef(null);
