@@ -9,7 +9,7 @@ import ResponsiveAppBar from './ResponsiveAppBar';
 import { useNavigate } from "react-router-dom";
 import { MyContext } from './App';
 
-function initializeToolsData(data) {
+export function initializeToolsData(data) {
   var groupedTools = {};
 
   // Iterate over each machine name
@@ -31,6 +31,76 @@ function initializeToolsData(data) {
 
   console.log("Grouped Tools Data: ", groupedTools);
   return groupedTools;
+}
+
+//login(idTextField.current.value)
+
+function login(tokenValue, event) {
+  if(event != null) {
+      event.preventDefault();
+    }
+
+    if(token != null) {
+      props.showLoadingScreen();
+        
+      const tokenInt = parseInt(tokenValue, 10);
+      const tokenModulo = tokenInt % 10000000;
+      const tokenString = tokenModulo.toString();
+
+    fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "token": tokenString,
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      if(data['result'] == "success") {
+        /*
+              props.setAlignment(data['orderType']);
+              props.setWeight(data['weight']);
+              props.setUserId(data['id'])
+              props.setName(data['name'])
+              props.setSurname(data['surname'])
+              props.setKgcost(data['kgcost'])
+              props.calculateCost(data['kgcost'], data['weight'])
+              */
+             console.log("Received data: " + JSON.stringify(data["data"]));
+
+
+
+             
+             setToolsData(initializeToolsData(data["data"]));
+             
+
+
+
+
+              props.setToken(tokenString);
+
+              props.setUserId(data['id'])
+              props.setName(data['name'])
+              props.setSurname(data['surname'])
+              props.notify("info", "Pomyślnie zalogowano!")
+              
+        
+      } else {
+        props.notify("error", "Wystąpił błąd podczas logowania")
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      props.notify("error", "contact")
+    })
+    .finally(() => {
+      props.hideLoadingScreen();
+    });
+  }
+
 }
 
 export default function ScanCard(props) {
@@ -56,7 +126,7 @@ export default function ScanCard(props) {
               if (timeDifference >= 0.5) {
                 console.log("The time difference is less than 1 second");
                 if(idTextField != null && idTextField.current.value != "") {
-                  handleSubmit();
+                  login();
                 }
                 idTextField.current.value = "";
               }
@@ -65,7 +135,7 @@ export default function ScanCard(props) {
         }, 500); // Run every second
     
         if(props.card != null) {
-          handleSubmit();
+          login();
         }
         
         //return () => clearInterval(interval);
@@ -83,82 +153,12 @@ export default function ScanCard(props) {
         
       }
 
-      function handleSubmit(event) {
-            if(event != null) {
-                event.preventDefault();
-              }
-          
-              if(idTextField.current != null) {
-                props.showLoadingScreen();
-                var tokenValue = idTextField.current.value;
-                if(props.card != null) {
-                  tokenValue = props.card;
-                }
-                  
-                const tokenInt = parseInt(tokenValue, 10);
-                const tokenModulo = tokenInt % 10000000;
-                const tokenString = tokenModulo.toString();
-
-              fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  "token": tokenString,
-                })
-              })
-              .then(response => response.json())
-              .then(data => {
-                console.log(data);
-                if(data['result'] == "success") {
-                  /*
-                        props.setAlignment(data['orderType']);
-                        props.setWeight(data['weight']);
-                        props.setUserId(data['id'])
-                        props.setName(data['name'])
-                        props.setSurname(data['surname'])
-                        props.setKgcost(data['kgcost'])
-                        props.calculateCost(data['kgcost'], data['weight'])
-                        */
-                       console.log("Received data: " + JSON.stringify(data["data"]));
-
-
-
-                       
-                       setToolsData(initializeToolsData(data["data"]));
-                       
-
-
-
-
-                        props.setToken(tokenString);
-
-                        props.setUserId(data['id'])
-                        props.setName(data['name'])
-                        props.setSurname(data['surname'])
-                        props.notify("info", "Pomyślnie zalogowano!")
-                        
-                  
-                } else {
-                  props.notify("error", "Wystąpił błąd podczas logowania")
-                }
-              })
-              .catch(error => {
-                console.error(error);
-                props.notify("error", "contact")
-              })
-              .finally(() => {
-                props.hideLoadingScreen();
-              });
-            }
-        
-    }
+      
 
 
     return (
 <div>
-<form onSubmit={handleSubmit} ref={formRef}>
+<form onSubmit={login} ref={formRef}>
 <Grid item xs={12}>
         <Typography variant="h4">Zeskanuj kartę, aby się zalogować</Typography>
         <Typography variant="body" color="secondary">

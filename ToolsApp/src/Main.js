@@ -6,7 +6,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import scanCard from './scan_card.png'
 import { useRef } from 'react';
 import ResponsiveAppBar from './ResponsiveAppBar';
-import ScanCard from './ScanCard';
+import ScanCard, { initializeToolsData } from './ScanCard';
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -252,40 +252,14 @@ export default function Main(props) {
             key={value}
             disablePadding
           >
-            <ListItemButton role={undefined} onClick={() => {
-              const currentIndex = selectedMachines?.indexOf(value);
-              const newChecked = [...selectedMachines];
-          
-              if (currentIndex === -1) {
-                newChecked.push(value);
-                // Create a new object for the modified tool data
-                const updatedToolData = Object.keys(toolsData[value]).reduce((acc, key) => {
-                  acc[key] = "b";
-                  return acc;
-                }, {});
-              
-                // Update toolsData state immutably
-                setToolsData({
-                  ...toolsData,
-                  [value]: updatedToolData
-                });
-              } else {
-                newChecked.splice(currentIndex, 1);
-                // Create a new object for the modified tool data
-                const updatedToolData = Object.keys(toolsData[value]).reduce((acc, key) => {
-                  acc[key] = "b";
-                  return acc;
-                }, {});
-              
-                // Update toolsData state immutably
-                setToolsData({
-                  ...toolsData,
-                  [value]: updatedToolData
-                });
-              }
-          
-              setSelectedMachines(newChecked);
-            }} dense>
+            <ListItemButton role={undefined} 
+              onClick={() => {
+                const currentIndex = selectedMachines?.indexOf(value);
+                const newChecked = [...selectedMachines];
+                setSelectedMachines(newChecked);
+                
+              }}
+            dense>
               <ListItemIcon>
                 <Checkbox
                   edge="start"
