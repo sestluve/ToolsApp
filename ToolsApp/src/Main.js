@@ -31,9 +31,11 @@ export default function Main(props) {
   const [userIdInputField, setUserIdInputField] = useState();
   const { card } = useParams();
 
-  const {token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
-  const [actualTime, setActualTime] = useState(null);
-  const [actualShift, setActualShift] = useState(-1);
+  const {actualTime, setActualTime, setActualShift, token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+  
+  const { actualShift } = props;
+
+  
   const checkboxesContainerRef = useRef(null)
   const [searchValue, setSearchValue] = useState("");
 
@@ -49,11 +51,7 @@ export default function Main(props) {
 
   const theme = useTheme()
 
-  const shifts = [
-    [5*3600 + 45*60, 13*3600 + 45*60],
-    [13*3600 + 45*60 + 1, 21*3600 + 45*60],
-    [21*3600 + 45*60 + 1, 5*3600 + 45*60 - 1]
-  ]
+
   
 
 
@@ -91,40 +89,7 @@ export default function Main(props) {
   */
 
 
-  useEffect(() => {
-   const interval = setInterval(() => {
-     setActualTime(new Date().toLocaleString());
-    
 
-     const now = new Date();
-        const secondsSinceMidnight = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-
-        console.log("Current Time in Seconds:", secondsSinceMidnight);
-        console.log("Shifts:", shifts);
-
-        const currentShiftIndex = shifts.findIndex(([start, end]) => {
-            if (start > end) { // Shift crosses midnight
-                return secondsSinceMidnight >= start || secondsSinceMidnight <= end;
-            }
-            return secondsSinceMidnight >= start && secondsSinceMidnight <= end;
-        });
-
-        console.log("Current Shift Index:", currentShiftIndex);
-
-        setActualShift(currentShiftIndex >= 0 ? currentShiftIndex : null);
-
-
-   }, 1000)
-
-   return () => {
-     clearInterval(interval);
-   }
-  
-  }, [shifts])
-
-  useEffect(() => {
-    login(props, toolsData, setToolsData, userIdInputField, actualShift)
-  }, [actualShift])
 
 
 
@@ -353,7 +318,7 @@ export default function Main(props) {
       ) : (
         <Paper elevation={3} sx={{ textAlign: 'center', px: '50px', py: '50px' }}>
         <Grid container direction={'column'} spacing={2}>
-          <ScanCard card={card} setToken={props.setToken} setUserId={props.setUserId} name={props.name} surname={props.surname} setName={props.setName} setSurname={props.setSurname} showLoadingScreen={props.showLoadingScreen} hideLoadingScreen={props.hideLoadingScreen} loading={props.loading} notify={(action, text) => { props.notify(action, text) }} />
+          <ScanCard actualShift={props.actualShift} card={card} setToken={props.setToken} setUserId={props.setUserId} name={props.name} surname={props.surname} setName={props.setName} setSurname={props.setSurname} showLoadingScreen={props.showLoadingScreen} hideLoadingScreen={props.hideLoadingScreen} loading={props.loading} notify={(action, text) => { props.notify(action, text) }} />
         </Grid>
         </Paper>
       )}

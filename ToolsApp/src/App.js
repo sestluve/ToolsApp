@@ -13,6 +13,7 @@ import { Button, Grid, Paper, Stack, ToggleButton, Typography } from "@mui/mater
 
 import { createTheme } from '@mui/material/styles';
 import styled from "@emotion/styled";
+import { login } from "./ScanCard";
 
 
 export const MyContext = React.createContext();
@@ -58,6 +59,59 @@ export default function App(props) {
   const [token, setToken] = useState("");
   const [selectedMachines, setSelectedMachines] = useState((localStorage.getItem("selectedMachines") && JSON.parse(localStorage.getItem("selectedMachines"))) || []);
   const [toolsData, setToolsData] = useState([]);
+
+
+  const [actualShift, setActualShift] = useState(null);
+  const [actualTime, setActualTime] = useState(null);
+
+  const shifts = [
+    [5*3600 + 45*60, 13*3600 + 45*60],
+    [13*3600 + 45*60 + 1, 21*3600 + 45*60],
+    [21*3600 + 45*60 + 1, 5*3600 + 45*60 - 1]
+  ]
+
+
+  function calculateShift() {
+      setActualTime(new Date().toLocaleString());
+     
+ 
+      const now = new Date();
+         const secondsSinceMidnight = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+ 
+         console.log("Current Time in Seconds:", secondsSinceMidnight);
+         console.log("Shifts:", shifts);
+ 
+         const currentShiftIndex = shifts.findIndex(([start, end]) => {
+             if (start > end) { // Shift crosses midnight
+                 return secondsSinceMidnight >= start || secondsSinceMidnight <= end;
+             }
+             return secondsSinceMidnight >= start && secondsSinceMidnight <= end;
+         });
+ 
+         console.log("Current Shift Index:", currentShiftIndex);
+ 
+         setActualShift(currentShiftIndex);
+    }
+
+
+
+
+  useEffect(() => {
+    
+
+    calculateShift();
+
+    const interval = setInterval(() => {
+      calculateShift()
+ 
+    }, 1000)
+ 
+    return () => {
+      clearInterval(interval);
+    }
+   
+   }, [])
+ 
 
 
 
@@ -138,7 +192,7 @@ function handlePasswordChange() {
 
 
 return (
-  <MyContext.Provider value={{ token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
+  <MyContext.Provider value={{ showLoadingScreen, actualTime, setActualTime, token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
     <ThemeProvider theme={theme}>
   <Box>
   <Box component="main" sx={{ paddingTop: 15 }}>
@@ -171,7 +225,7 @@ return (
   <Router>
               <Routes>
                   <Route exact path="/" element={
-                  <div><Main setToken={setToken} userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} /></div>
+                  <div><Main actualShift={actualShift} setToken={setToken} userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} /></div>
                   } ></Route>
                   
               </Routes>

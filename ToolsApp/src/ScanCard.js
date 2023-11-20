@@ -35,13 +35,13 @@ export function initializeToolsData(data) {
 
 
 
-export function login(props, toolsData, setToolsData, tokenValue, actualShift, event) {
+export function login(props, toolsData, setToolsData, tokenValue, actualShift, showLoadingScreen, event) {
   if(event != null) {
       event.preventDefault();
     }
 
     if(tokenValue != null) {
-      props.showLoadingScreen();
+      showLoadingScreen();
         
       const tokenInt = parseInt(tokenValue, 10);
       const tokenModulo = tokenInt % 10000000;
@@ -109,11 +109,19 @@ export default function ScanCard(props) {
     const [previousTime, setPreviousTime] = useState(new Date().getTime());
     const formRef = useRef(null);
 
-    const {actualShift, toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
-    
+    const { userId, name, surname, showLoadingScreen, token, setToken, toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+    const {actualShift} = props;
 
     const navigate = useNavigate();
 
+    useEffect(() => {
+      if(token != null && userId != null) {
+        login(props, toolsData, setToolsData, token, props.actualShift, showLoadingScreen)
+      }
+     }, [actualShift])
+
+
+     
     useEffect(() => {
         if(props.userId == null) {
           handleBlur();
@@ -127,7 +135,7 @@ export default function ScanCard(props) {
               if (timeDifference >= 0.5) {
                 console.log("The time difference is less than 1 second");
                 if(idTextField != null && idTextField.current.value != "") {
-                  login(props, toolsData, setToolsData, idTextField.current.value, actualShift)
+                  login(props, toolsData, setToolsData, idTextField.current.value, props.actualShift, showLoadingScreen)
                 }
                 idTextField.current.value = "";
               }
