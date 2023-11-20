@@ -6,7 +6,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import scanCard from './scan_card.png'
 import { useRef } from 'react';
 import ResponsiveAppBar from './ResponsiveAppBar';
-import ScanCard, { initializeToolsData } from './ScanCard';
+import ScanCard, { initializeToolsData, login } from './ScanCard';
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -31,9 +31,9 @@ export default function Main(props) {
   const [userIdInputField, setUserIdInputField] = useState();
   const { card } = useParams();
 
-  const {userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+  const {token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
   const [actualTime, setActualTime] = useState(null);
-  const [actualShift, setActualShift] = useState(null);
+  const [actualShift, setActualShift] = useState(-1);
   const checkboxesContainerRef = useRef(null)
   const [searchValue, setSearchValue] = useState("");
 
@@ -122,6 +122,10 @@ export default function Main(props) {
   
   }, [shifts])
 
+  useEffect(() => {
+    login(props, toolsData, setToolsData, userIdInputField, actualShift)
+  }, [actualShift])
+
 
 
 
@@ -129,33 +133,34 @@ export default function Main(props) {
 
 
   function saveData() {
-    let toolsToSave = [];
-    let invalidToolFound = false;
+    var toolsToSave = [];
+    var allToolsSelected = true;
 
     for (const machine of selectedMachines) {
         if (toolsData.hasOwnProperty(machine)) {
-            for (const tool in toolsData[machine]) {
-                if (toolsData[machine].hasOwnProperty(tool)) {
-                    if (toolsData[machine][tool] === 'b') {
-                        invalidToolFound = true;
-                        break;
-                    } else {
-                        // Add the tool to the list
-                        toolsToSave.push({ 
-                          workplace: machine, // Assuming 'machine' is equivalent to 'workplace'
-                          tool_name: tool,
-                          tool_state: toolsData[machine][tool]
-                         });
-                    }
+            for (const toolObject of toolsData[machine]) {
+                // Check if any tool within the selected machines is still in 'b' state
+                if (toolObject.state === 'b') {
+                    allToolsSelected = false;
+                    break;
+                }
+
+                // Add tools to save only if db_state is 'b' and current state is not 'b'
+                if (toolObject.dbState == 'b' && toolObject.state != 'b') {
+                    toolsToSave.push({ 
+                        workplace: machine,
+                        tool_name: toolObject.name,
+                        tool_state: toolObject.state
+                    });
                 }
             }
         }
-        if (invalidToolFound) {
+        if (!allToolsSelected) {
             break;
         }
     }
 
-    if (invalidToolFound) {
+    if (!allToolsSelected) {
         alert("Musisz zaznaczyć wszystkie narzędzia!");
     } else {
         console.log("toolsToSave: ", toolsToSave);
@@ -175,8 +180,9 @@ export default function Main(props) {
         .then(response => response.json())
         .then(data => {
           console.log(data);
-          if(data['result'] == "success") {
+          if(data['result'] === "success") {
             alert("Zapisano!")
+            login(props, toolsData, setToolsData, token, actualShift)
           } else {
             props.notify("error", "Wystąpił błąd podczas zapisywania danych!")
           }
@@ -188,19 +194,22 @@ export default function Main(props) {
         .finally(() => {
           props.hideLoadingScreen();
         });
-        // ... rest of the function remains the same
     }
-  
-
-
-
-
-
-
-
-
-  
 }
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
 
 
 
@@ -255,9 +264,19 @@ export default function Main(props) {
             <ListItemButton role={undefined} 
               onClick={() => {
                 const currentIndex = selectedMachines?.indexOf(value);
-                const newChecked = [...selectedMachines];
-                setSelectedMachines(newChecked);
-                
+    let newChecked = [...selectedMachines];
+
+    if (currentIndex === -1) {
+      newChecked.push(value); // Add the value if it's not already in the array
+    } else {
+      newChecked.splice(currentIndex, 1); // Remove the value if it's already in the array
+    }
+
+    setSelectedMachines(newChecked);
+
+
+
+                login(props, toolsData, setToolsData, token, actualShift)
               }}
             dense>
               <ListItemIcon>
@@ -300,13 +319,15 @@ export default function Main(props) {
                     {selectedMachines[machineName]}
                   </Typography>
                     <ToggleButton onClick={() => {
-                      setToolsData({
-                        ...toolsData,
-                        [selectedMachines[machineName]]: Object.keys(toolsData[selectedMachines[machineName]]).reduce((acc, key) => {
-                          acc[key] = "y";
-                          return acc;
-                        }, {})
-                      });
+                      const updatedToolsData = { ...toolsData };
+                      const machineTools = updatedToolsData[selectedMachines[machineName]];
+                  
+                      // Update each tool's state to 'y' while keeping other data unchanged
+                      for (let i = 0; i < machineTools.length; i++) {
+                        machineTools[i] = { ...machineTools[i], state: "y" };
+                      }
+                  
+                      setToolsData(updatedToolsData);
                     }} value="by" title='Są wszystkie narzędzia' sx={{ theme: theme.palette.success.main }}>
                       
                       <CheckIcon color='success' />

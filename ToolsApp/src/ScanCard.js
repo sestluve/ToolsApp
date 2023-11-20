@@ -33,14 +33,14 @@ export function initializeToolsData(data) {
   return groupedTools;
 }
 
-//login(idTextField.current.value)
 
-function login(tokenValue, event) {
+
+export function login(props, toolsData, setToolsData, tokenValue, actualShift, event) {
   if(event != null) {
       event.preventDefault();
     }
 
-    if(token != null) {
+    if(tokenValue != null) {
       props.showLoadingScreen();
         
       const tokenInt = parseInt(tokenValue, 10);
@@ -54,6 +54,7 @@ function login(tokenValue, event) {
       },
       body: JSON.stringify({
         "token": tokenString,
+        "actualShift": actualShift
       })
     })
     .then(response => response.json())
@@ -108,7 +109,7 @@ export default function ScanCard(props) {
     const [previousTime, setPreviousTime] = useState(new Date().getTime());
     const formRef = useRef(null);
 
-    const {toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+    const {actualShift, toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
     
 
     const navigate = useNavigate();
@@ -126,7 +127,7 @@ export default function ScanCard(props) {
               if (timeDifference >= 0.5) {
                 console.log("The time difference is less than 1 second");
                 if(idTextField != null && idTextField.current.value != "") {
-                  login();
+                  login(props, toolsData, setToolsData, idTextField.current.value, actualShift)
                 }
                 idTextField.current.value = "";
               }
@@ -134,9 +135,6 @@ export default function ScanCard(props) {
         }
         }, 500); // Run every second
     
-        if(props.card != null) {
-          login();
-        }
         
         //return () => clearInterval(interval);
       }, []);

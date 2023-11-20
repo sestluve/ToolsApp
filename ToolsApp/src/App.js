@@ -137,11 +137,8 @@ function handlePasswordChange() {
   });
 
 
-
-
-
 return (
-  <MyContext.Provider value={{userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
+  <MyContext.Provider value={{ token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
     <ThemeProvider theme={theme}>
   <Box>
   <Box component="main" sx={{ paddingTop: 15 }}>

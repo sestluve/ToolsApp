@@ -49,8 +49,6 @@ export default function CheckList(props) {
                     <List sx={{ bgcolor: 'background.paper' }}>
             {currentMachineData?.slice(i, i + maxItemsPerColumn).map((toolObject, index) => {
               const name = toolObject.name;
-              const dbState = toolObject.db_state;
-              const state = toolObject.state;
               const labelId = `select-label-${machineName}-${name}`;
               const id = index + i;
 
@@ -60,6 +58,7 @@ export default function CheckList(props) {
                   sx={{ p: 1, width: 450 }}
                   secondaryAction={<FormControl fullWidth>
                     <ToggleButtonGroup
+                    disabled={currentMachineData && currentMachineData[id] && currentMachineData[id].dbState != "b"}
                       orientation="horizontal"
                       value={currentMachineData && currentMachineData[id] && currentMachineData[id].state}
                       exclusive
@@ -68,7 +67,7 @@ export default function CheckList(props) {
                         // Create a new state object by spreading the old state
 
                         
-                        if(dbState == "b") {
+                        if(currentMachineData[id].dbState != "b") {
                           return;
                         }
                         
@@ -120,7 +119,9 @@ export default function CheckList(props) {
 
                   </FormControl>}
                 >
-                  <ListItemText id={labelId} primary={name} />
+                  <ListItemText id={labelId} primary={name}
+                  primaryTypographyProps={{ style: { color: currentMachineData && currentMachineData[id] && currentMachineData[id].dbState != "b" ? 'grey' : 'inherit' } }}
+                  />
                 </ListItem>
 
               );

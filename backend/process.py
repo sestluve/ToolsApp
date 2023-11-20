@@ -60,9 +60,13 @@ def connect_db_rcp():
 def login():
     jsonData = request.json
     token = jsonData.get('token')
+    actualShift = jsonData.get('actualShift')
 
     if not token:
         return jsonify({'result': 'error', 'message': 'You have to specify a token!'})
+    
+    if not actualShift:
+        return jsonify({'result': 'error', 'message': 'You have to specify an actual shift!'})
 
     conn = connect_db_rcp()
     conn2 = connect_db_apps()
@@ -99,12 +103,13 @@ def login():
             conn2 = connect_db_apps()
             cur2 = conn2.cursor()
             cur2.execute("""
-    SELECT t.*, 
+    SELECT DISTINCT t.*, 
            tp.tool_state
     FROM tools t
     LEFT JOIN tools_presence tp ON t.tool_name = tp.tool_name 
+        AND t.machine_name = tp.workplace
         AND DATE(tp.timestamp) = CURRENT_DATE 
-        AND tp.shift = 0
+        AND tp.shift = %s
 """, (shift,))
             result2 = cur2.fetchall()
 
