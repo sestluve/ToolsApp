@@ -31,7 +31,7 @@ export default function Main(props) {
   const [userIdInputField, setUserIdInputField] = useState();
   const { card } = useParams();
 
-  const {actualTime, setActualTime, setActualShift, token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+  const {selectedWorkplace, setSelectedWorkplace, actualTime, setActualTime, setActualShift, token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
   
   const { actualShift } = props;
 
@@ -139,7 +139,8 @@ export default function Main(props) {
             "userId": userId,
             "userName": name,
             "userSurname": surname,
-            "data": toolsToSave
+            "data": toolsToSave,
+            "actualShift": actualShift
           })
         })
         .then(response => response.json())
@@ -168,7 +169,32 @@ export default function Main(props) {
 
 
 
+function convertToRoman(num) {
+  const romanMap = {
+      M: 1000,
+      CM: 900,
+      D: 500,
+      CD: 400,
+      C: 100,
+      XC: 90,
+      L: 50,
+      XL: 40,
+      X: 10,
+      IX: 9,
+      V: 5,
+      IV: 4,
+      I: 1
+  };
 
+  let roman = '';
+  for (let key in romanMap) {
+      while (num >= romanMap[key]) {
+          roman += key;
+          num -= romanMap[key];
+      }
+  }
+  return roman;
+}
 
 
 
@@ -192,7 +218,7 @@ export default function Main(props) {
           <Paper elevation={3} sx={{ textAlign: 'center', px: '50px', py: '50px' }}>
             <Typography variant='h5'>Aktualna zmiana:</Typography>
             <Typography variant='h6'>{ actualTime || "Brak informacji o czasie" }</Typography>
-            <Typography variant='h6'>{ actualShift !== null && actualShift !== undefined ? [(actualShift + 1)].map(() => { return "I" } ) + " zmiana" : "Brak danych" }</Typography>
+            <Typography variant='h6'>{ actualShift !== null && actualShift !== undefined ? convertToRoman(actualShift + 1) + " zmiana" : "Brak danych" }</Typography>
             <Button variant='contained' sx={{ mt: 5 }} onClick={() => saveData()}>Zapisz wyniki dla aktualnej zmiany</Button>
             </Paper>
           <Paper elevation={3} sx={{ textAlign: 'center', px: '50px', py: '50px' }}>
@@ -202,7 +228,17 @@ export default function Main(props) {
             <TextField variant="standard" fullWidth sx={{ mt: 3, mb: 3 }} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
 
             <List sx={{ width: '100%', bgcolor: 'background.paper', height: 300, overflowY: "scroll" }}>
-      {Object.keys(toolsData).filter((machine) => searchValue === "" || (selectedMachines.includes(machine) || machine.toLocaleLowerCase().includes(searchValue.toLocaleLowerCase()))).sort((a, b) => {
+      {selectedWorkplace == null ? Object.keys(toolsData).map((machineName) => (
+        <ListItem
+          key={"machine-" + machineName}
+          disablePadding
+        >
+          <ListItemButton role={undefined} onClick={() => setSelectedWorkplace(machineName)}>
+            {machineName}
+            </ListItemButton>
+        </ListItem>
+      ))
+        : Object.keys(toolsData[selectedWorkplace]).filter((machine) => searchValue === "" || (selectedMachines.keys().includes(machine) || machine.toLocaleLowerCase().includes(searchValue.toLocaleLowerCase()))).sort((a, b) => {
     const indexA = selectedMachines?.indexOf(a);
     const indexB = selectedMachines?.indexOf(b);
 
@@ -228,20 +264,23 @@ export default function Main(props) {
           >
             <ListItemButton role={undefined} 
               onClick={() => {
-                const currentIndex = selectedMachines?.indexOf(value);
-    let newChecked = [...selectedMachines];
-
-    if (currentIndex === -1) {
-      newChecked.push(value); // Add the value if it's not already in the array
-    } else {
-      newChecked.splice(currentIndex, 1); // Remove the value if it's already in the array
-    }
-
-    setSelectedMachines(newChecked);
-
-
-
-                login(props, toolsData, setToolsData, token, actualShift)
+                const machineToToggle = { workplace: selectedWorkplace, machine_name: value };
+                const currentIndex = selectedMachines?.findIndex(
+                  (machine) => machine?.workplace === machineToToggle?.workplace && machine?.machine_name === machineToToggle?.machine_name
+                );
+              
+                let newChecked;
+              
+                if (currentIndex === -1) {
+                  newChecked = [...selectedMachines, machineToToggle]; // Add the machine object if it's not already in the array
+                } else {
+                  newChecked = selectedMachines.filter((_, index) => index !== currentIndex); // Remove the machine object if it's already in the array
+                }
+              
+                setSelectedMachines(newChecked);
+              
+                // Call the login function with updated parameters
+                login(props, toolsData, setToolsData, token, actualShift);
               }}
             dense>
               <ListItemIcon>
@@ -289,7 +328,9 @@ export default function Main(props) {
                   
                       // Update each tool's state to 'y' while keeping other data unchanged
                       for (let i = 0; i < machineTools.length; i++) {
+                        if(machineTools[i].dbState == "b") {
                         machineTools[i] = { ...machineTools[i], state: "y" };
+                        }
                       }
                   
                       setToolsData(updatedToolsData);
@@ -300,7 +341,7 @@ export default function Main(props) {
 
                 </AppBar>
                 
-                <CheckList machineName={machineName} selectedMachines={selectedMachines} containerRef={checkboxesContainerRef} />
+                <CheckList workplace={selectedWorkplace} machineName={machineName} selectedMachines={selectedMachines} containerRef={checkboxesContainerRef} />
 
 
 

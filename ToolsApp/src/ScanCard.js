@@ -12,21 +12,28 @@ import { MyContext } from './App';
 export function initializeToolsData(data) {
   var groupedTools = {};
 
-  // Iterate over each machine name
-  for (let machineName in data) {
-      if (data.hasOwnProperty(machineName)) {
+  // Iterate over each workplace
+  for (let workplace in data) {
+    if (data.hasOwnProperty(workplace)) {
+      groupedTools[workplace] = [];
+
+      // Iterate over each machine name in the workplace
+      for (let machineName in data[workplace]) {
+        if (data[workplace].hasOwnProperty(machineName)) {
           // Initialize an array for each machine
-          groupedTools[machineName] = [];
+          groupedTools[workplace][machineName] = [];
 
           // Iterate over each tool in the machine
-          data[machineName].forEach(tool => {
-              groupedTools[machineName].push({
-                  name: tool.name,
-                  dbState: tool.db_state,
-                  state: tool.db_state // Initially, the state is the same as the dbState
-              });
-          });
+          for (let tool in data[workplace][machineName]) {
+            groupedTools[workplace][machineName][tool] = {
+              name: tool.name,
+              dbState: tool.db_state,
+              state: tool.db_state // Initially, the state is the same as the dbState
+            };
+          };
+        }
       }
+    }
   }
 
   console.log("Grouped Tools Data: ", groupedTools);
@@ -35,13 +42,13 @@ export function initializeToolsData(data) {
 
 
 
-export function login(props, toolsData, setToolsData, tokenValue, actualShift, showLoadingScreen, event) {
+export function login(props, toolsData, setToolsData, tokenValue, actualShift, showLoadingScreen, hideLoadingScreen, event) {
   if(event != null) {
       event.preventDefault();
     }
 
     if(tokenValue != null) {
-      showLoadingScreen();
+      props.showLoadingScreen();
         
       const tokenInt = parseInt(tokenValue, 10);
       const tokenModulo = tokenInt % 10000000;
@@ -118,10 +125,10 @@ export default function ScanCard(props) {
       if(token != null && userId != null) {
         login(props, toolsData, setToolsData, token, props.actualShift, showLoadingScreen)
       }
-     }, [actualShift])
+     }, [props.actualShift])
 
 
-     
+
     useEffect(() => {
         if(props.userId == null) {
           handleBlur();
@@ -144,8 +151,8 @@ export default function ScanCard(props) {
         }, 500); // Run every second
     
         
-        //return () => clearInterval(interval);
-      }, []);
+        return () => clearInterval(interval);
+      }, [props.actualShift]);
 
 
       const handleBlur = () => {
@@ -164,7 +171,7 @@ export default function ScanCard(props) {
 
     return (
 <div>
-<form onSubmit={login} ref={formRef}>
+<form ref={formRef}>
 <Grid item xs={12}>
         <Typography variant="h4">Zeskanuj kartę, aby się zalogować</Typography>
         <Typography variant="body" color="secondary">

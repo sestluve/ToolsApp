@@ -59,6 +59,7 @@ export default function App(props) {
   const [token, setToken] = useState("");
   const [selectedMachines, setSelectedMachines] = useState((localStorage.getItem("selectedMachines") && JSON.parse(localStorage.getItem("selectedMachines"))) || []);
   const [toolsData, setToolsData] = useState([]);
+  const [selectedWorkplace, setSelectedWorkplace] = useState(null);
 
 
   const [actualShift, setActualShift] = useState(null);
@@ -192,7 +193,7 @@ function handlePasswordChange() {
 
 
 return (
-  <MyContext.Provider value={{ showLoadingScreen, actualTime, setActualTime, token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
+  <MyContext.Provider value={{ selectedWorkplace, setSelectedWorkplace, showLoadingScreen, actualTime, setActualTime, token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
     <ThemeProvider theme={theme}>
   <Box>
   <Box component="main" sx={{ paddingTop: 15 }}>

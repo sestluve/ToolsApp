@@ -8,8 +8,8 @@ import { CustomToggleButton, MyContext } from './App';
 import HomeRepairServiceIcon from '@mui/icons-material/HomeRepairService';
 
 export default function CheckList(props) {
-    const { machineName, selectedMachines, containerRef } = props;
-    const { toolsData, setToolsData } = useContext(MyContext);
+    const { workplace, machineName, selectedMachines, containerRef } = props;
+    const { selectedWorkplace, setSelectedWorkplace, toolsData, setToolsData } = useContext(MyContext);
     const [items, setItems] = useState(null)
 
     const [maxItemsPerColumn, setMaxItemsPerColumn] = useState(10);
@@ -40,7 +40,7 @@ export default function CheckList(props) {
 
 
     useEffect(() => {
-      const currentMachineData = toolsData[selectedMachines[machineName]];
+      const currentMachineData = toolsData[selectedWorkplace][selectedMachines[machineName]];
 
         var tempItems = [];
 
@@ -49,7 +49,7 @@ export default function CheckList(props) {
                     <List sx={{ bgcolor: 'background.paper' }}>
             {currentMachineData?.slice(i, i + maxItemsPerColumn).map((toolObject, index) => {
               const name = toolObject.name;
-              const labelId = `select-label-${machineName}-${name}`;
+              const labelId = `select-label-${selectedWorkplace}-${machineName}-${name}`;
               const id = index + i;
 
               return (
@@ -75,22 +75,25 @@ export default function CheckList(props) {
                         if (newValue == null) return;
 
                         setToolsData(prevToolsData => {
-                          // Deep copy the array for the specific machine
-                          const machineTools = prevToolsData[selectedMachines[machineName]].map(tool => ({ ...tool }));
+                          // Create a deep copy of the previous state
+                          const updatedToolsData = JSON.parse(JSON.stringify(prevToolsData));
                         
-                          // Update the specific tool in the array
-                          if (machineTools[id]) {
-                            machineTools[id] = {
-                              ...machineTools[id],
-                              state: newValue
-                            };
+                          // Extract the workplace and machine name from selectedMachines
+                          const { workplace, machine_name } = selectedMachines[machineName]; // Assuming selectedMachines[machineName] has the correct structure
+                        
+                          // Check if the specific machine exists in the data
+                          if (updatedToolsData[workplace] && updatedToolsData[workplace][machine_name]) {
+                            // Update the specific tool in the array
+                            if (updatedToolsData[workplace][machine_name][id]) {
+                              updatedToolsData[workplace][machine_name][id] = {
+                                ...updatedToolsData[workplace][machine_name][id],
+                                state: newValue
+                              };
+                            }
                           }
                         
                           // Return the updated state
-                          return {
-                            ...prevToolsData,
-                            [selectedMachines[machineName]]: machineTools
-                          };
+                          return updatedToolsData;
                         });
                       } }
                     >

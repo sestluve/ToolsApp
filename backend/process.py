@@ -65,7 +65,7 @@ def login():
     if not token:
         return jsonify({'result': 'error', 'message': 'You have to specify a token!'})
     
-    if not actualShift:
+    if actualShift < 0:
         return jsonify({'result': 'error', 'message': 'You have to specify an actual shift!'})
 
     conn = connect_db_rcp()
@@ -98,33 +98,38 @@ def login():
 
         # Check if any results were returned
         if result:
-            shift = 0  # First shift represented by index 0
-
             conn2 = connect_db_apps()
             cur2 = conn2.cursor()
             cur2.execute("""
-    SELECT DISTINCT t.*, 
+    SELECT t.*,
            tp.tool_state
     FROM tools t
-    LEFT JOIN tools_presence tp ON t.tool_name = tp.tool_name 
-        AND t.machine_name = tp.workplace
-        AND DATE(tp.timestamp) = CURRENT_DATE 
-        AND tp.shift = %s
-""", (shift,))
+    LEFT JOIN tools_presence tp ON t.tool_name = tp.tool_name
+        AND t.machine_name = tp.machine_name
+        AND t.workplace = tp.workplace
+        AND DATE(tp.timestamp) = CURRENT_DATE
+        AND tp.shift = 0
+""", (actualShift,))
             result2 = cur2.fetchall()
 
             # Process the tools data
             grouped_tools = {}
             for row in result2:
-                group = row[1]  # Replace with the index of the group column
+                machine_name = row[1]  # Replace with the index of the group column
                 tool_name = row[2]  # Replace with the index of the tool name column
-                tool_state = row[3]  # Replace with the index of the tool state column
-                if group not in grouped_tools:
-                    grouped_tools[group] = []
+                workplace = row[3]
+                tool_state = row[4]  # Replace with the index of the tool state column
+                if workplace not in grouped_tools:
+                    grouped_tools[workplace] = {}
+                if machine_name not in grouped_tools[workplace]:
+                    grouped_tools[workplace][machine_name] = {}
 
                 if tool_state is None:
                     tool_state = "b"
-                grouped_tools[group].append({'name': tool_name, 'db_state': tool_state})
+                if tool_name not in grouped_tools[workplace][machine_name]:
+                    grouped_tools[workplace][machine_name][tool_name] = []
+                grouped_tools[workplace][machine_name][tool_name] = {'name': tool_name, 'db_state': tool_state}
+
 
 
             return jsonify({'result': 'success', 'id': result[9], 'name': result[8], 'surname': result[7], 'data': grouped_tools})
@@ -142,6 +147,7 @@ def save():
     userSurname = jsonData.get('userSurname')
     data = jsonData.get('data')
     recordId = jsonData.get('recordId')
+    actualShift = jsonData.get('actualShift')
 
     if not userId:
         return jsonify({'result': 'error', 'message': 'You have to specify user id!'})
@@ -181,6 +187,8 @@ def save():
             return jsonify({'result': 'success'})
         '''
 
+    if actualShift < 0:
+        return jsonify({'result': 'error', 'message': 'You have to specify shift!'})
 
     if not data:
         return jsonify({'result': 'error', 'message': 'Data is incomplete!'})
@@ -195,7 +203,7 @@ def save():
         # Create a list of value tuples for each tool
         values = []
         for tool in data:
-            value_tuple = (userId, userName, userSurname, tool['workplace'], tool['tool_name'], tool['tool_state'], 0)  # Shift is always 0
+            value_tuple = (userId, userName, userSurname, tool['workplace'], tool['tool_name'], tool['tool_state'], actualShift)  # Shift is always 0
             values.append(value_tuple)
 
         # Add the value tuples to the query using a parameterized format
