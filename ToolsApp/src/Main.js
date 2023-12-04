@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import { Typography, Paper, Box, TextField, Button, Grid, Switch, ToggleButton, ToggleButtonGroup, FormControl, FilledInput, FormHelperText, OutlinedInput, AppBar, List, ListItem, ListItemButton, ListItemIcon, Checkbox, ListItemText, Chip, Divider, Toolbar, IconButton } from '@mui/material';
+import { Typography, Paper, Box, TextField, Button, Grid, Switch, ToggleButton, ToggleButtonGroup, FormControl, FilledInput, FormHelperText, OutlinedInput, AppBar, List, ListItem, ListItemButton, ListItemIcon, Checkbox, ListItemText, Chip, Divider, Toolbar, IconButton, ListSubheader } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
 import InputAdornment from '@mui/material/InputAdornment';
 import scanCard from './scan_card.png'
@@ -24,14 +24,14 @@ import BuildIcon from '@mui/icons-material/Build';
 import { useTheme } from "@mui/material/styles";
 import CheckList from './CheckList';
 import { Stack } from '@mui/system';
-
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 
 export default function Main(props) {
   
   const [userIdInputField, setUserIdInputField] = useState();
   const { card } = useParams();
 
-  const {selectedWorkplace, setSelectedWorkplace, actualTime, setActualTime, setActualShift, token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
+  const {showLoadingScreen, hideLoadingScreen, selectedWorkplace, setSelectedWorkplace, actualTime, setActualTime, setActualShift, token, setToken, userId, name, surname, notify,  toolsState, setToolsState, selectedMachines, setSelectedMachines, toolsData, setToolsData} = useContext(MyContext)
   
   const { actualShift } = props;
 
@@ -41,6 +41,12 @@ export default function Main(props) {
 
   
  
+  useEffect(() => {
+    if(token != null && userId != null) {
+      login(props, toolsData, setToolsData, token, actualShift, showLoadingScreen)
+    }
+    
+  }, [actualShift])
 
 
 
@@ -101,30 +107,40 @@ export default function Main(props) {
     var toolsToSave = [];
     var allToolsSelected = true;
 
-    for (const machine of selectedMachines) {
-        if (toolsData.hasOwnProperty(machine)) {
-            for (const toolObject of toolsData[machine]) {
-                // Check if any tool within the selected machines is still in 'b' state
+    // Iterate over each selected machine
+    for (const { workplace, machine_name } of selectedMachines) {
+        // Check if toolsData has the workplace and machine_name property
+        if (toolsData[workplace] && toolsData[workplace][machine_name]) {
+            for (const toolObject of toolsData[workplace][machine_name]) {
+                // Check if any tool's state is 'b', if so, not all tools are selected
                 if (toolObject.state === 'b') {
                     allToolsSelected = false;
                     break;
                 }
 
                 // Add tools to save only if db_state is 'b' and current state is not 'b'
-                if (toolObject.dbState == 'b' && toolObject.state != 'b') {
+                if (toolObject.dbState === 'b' && toolObject.state !== 'b') {
                     toolsToSave.push({ 
-                        workplace: machine,
+                        workplace: workplace, // assuming workplace is the correct key
+                        machine_name: machine_name,
                         tool_name: toolObject.name,
                         tool_state: toolObject.state
                     });
                 }
             }
+        } else {
+            // If the workplace or machine_name is not found in toolsData, not all tools are selected
+            allToolsSelected = false;
+            break;
         }
+
+        // If at any point allToolsSelected is false, break the outer loop
         if (!allToolsSelected) {
             break;
         }
     }
 
+    // Alert or proceed to save based on allToolsSelected flag
     if (!allToolsSelected) {
         alert("Musisz zaznaczyć wszystkie narzędzia!");
     } else {
@@ -222,13 +238,12 @@ function convertToRoman(num) {
             <Button variant='contained' sx={{ mt: 5 }} onClick={() => saveData()}>Zapisz wyniki dla aktualnej zmiany</Button>
             </Paper>
           <Paper elevation={3} sx={{ textAlign: 'center', px: '50px', py: '50px' }}>
-            <Typography variant='h5'>Wybrane maszyny:</Typography>
-            <Typography variant='h6'>{(selectedMachines?.length > 0 && selectedMachines?.toLocaleString()) || "Nie wybrano"}</Typography>
             
-            <TextField variant="standard" fullWidth sx={{ mt: 3, mb: 3 }} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
+            <TextField variant="standard" fullWidth sx={{ mt: 3, mb: 3 }} label="Wyszukaj maszynę w stanowisku" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
 
             <List sx={{ width: '100%', bgcolor: 'background.paper', height: 300, overflowY: "scroll" }}>
       {selectedWorkplace == null ? Object.keys(toolsData).map((machineName) => (
+        <React.Fragment>
         <ListItem
           key={"machine-" + machineName}
           disablePadding
@@ -237,10 +252,23 @@ function convertToRoman(num) {
             {machineName}
             </ListItemButton>
         </ListItem>
+        
+        </React.Fragment>
       ))
-        : Object.keys(toolsData[selectedWorkplace]).filter((machine) => searchValue === "" || (selectedMachines.keys().includes(machine) || machine.toLocaleLowerCase().includes(searchValue.toLocaleLowerCase()))).sort((a, b) => {
-    const indexA = selectedMachines?.indexOf(a);
-    const indexB = selectedMachines?.indexOf(b);
+        :  
+        <>
+        <ListItem
+        key={"back-to-workplaces-button"}
+        disablePadding
+      >
+          <ListItemButton role={undefined} onClick={() => setSelectedWorkplace(null)}>
+            <ArrowBackIosNewIcon /> Powrót
+          </ListItemButton>
+          </ListItem>
+           { Object.keys(toolsData[selectedWorkplace]).filter((machine) => searchValue === "" || (selectedMachines.find((selectedMachine) => selectedMachine.machine_name === machine || (machine.toLowerCase().includes(searchValue.toLowerCase()) )))).sort((a, b) => {
+          const indexA = selectedMachines.findIndex((machine) => machine.machine_name === a);
+          const indexB = selectedMachines.findIndex((machine) => machine.machine_name === b);
+      
 
     if (indexA > -1 && indexB > -1) {
         // Both a and b are in selectedMachines, sort by their order in selectedMachines
@@ -254,10 +282,11 @@ function convertToRoman(num) {
     } else {
         // Neither a nor b is in selectedMachines, keep their original order or sort by another criteria
         return 0;
-    }}).map((value) => {
+    }}).map((value, index) => {
         const labelId = `checkbox-list-label-${value}`;
 
         return (
+          <React.Fragment>
           <ListItem
             key={value}
             disablePadding
@@ -286,7 +315,7 @@ function convertToRoman(num) {
               <ListItemIcon>
                 <Checkbox
                   edge="start"
-                  checked={selectedMachines.indexOf(value) !== -1}
+                  checked={selectedMachines?.findIndex((machine) => machine?.workplace === selectedWorkplace && machine?.machine_name === value) !== -1}
                   tabIndex={-1}
                   disableRipple
                   inputProps={{ 'aria-labelledby': labelId }}
@@ -295,8 +324,12 @@ function convertToRoman(num) {
               <ListItemText id={labelId} primary={value} />
             </ListItemButton>
           </ListItem>
-        );
-      })}
+          </React.Fragment>
+          );
+        })
+      }
+        </>
+      }
     </List>
 
 
@@ -311,7 +344,9 @@ function convertToRoman(num) {
         
         <Grid xs={12} lg={9}>
         <Stack spacing={3} direction={'row'} sx={{ ml: 5, mr: 5 }} ref={checkboxesContainerRef}>
-        { Object.keys(selectedMachines)?.map((machineName) => {
+        { selectedMachines?.map((machine, index) => {
+          const machineName = machine.machine_name;
+          const workplace = machine.workplace;
           return (
 
             
@@ -320,20 +355,23 @@ function convertToRoman(num) {
                 <AppBar position="static" style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }} sx={{ p: 2, pl: 5, pr: 5 }}>
                   <BuildIcon />
                   <Typography variant='h6' sx={{ pl: 5, pr: 5 }}>
-                    {selectedMachines[machineName]}
+                    {workplace} - <br /> {machineName}
                   </Typography>
                     <ToggleButton onClick={() => {
-                      const updatedToolsData = { ...toolsData };
-                      const machineTools = updatedToolsData[selectedMachines[machineName]];
-                  
-                      // Update each tool's state to 'y' while keeping other data unchanged
-                      for (let i = 0; i < machineTools.length; i++) {
-                        if(machineTools[i].dbState == "b") {
-                        machineTools[i] = { ...machineTools[i], state: "y" };
-                        }
-                      }
-                  
-                      setToolsData(updatedToolsData);
+                      setToolsData(prevToolsData => {
+
+                      
+                        // Create a shallow copy of prevToolsData
+                        const updatedToolsData = { ...prevToolsData };
+                    
+                        // Update the state of the specific machine
+                        updatedToolsData[workplace][machineName]?.forEach(tool => {
+                          tool.state = "y";
+                        });
+                        
+                    
+                        return updatedToolsData;
+                      });
                     }} value="by" title='Są wszystkie narzędzia' sx={{ theme: theme.palette.success.main }}>
                       
                       <CheckIcon color='success' />
@@ -341,7 +379,7 @@ function convertToRoman(num) {
 
                 </AppBar>
                 
-                <CheckList workplace={selectedWorkplace} machineName={machineName} selectedMachines={selectedMachines} containerRef={checkboxesContainerRef} />
+                <CheckList machine={machine} workplace={workplace} machineName={machineName} selectedMachines={selectedMachines} containerRef={checkboxesContainerRef} />
 
 
 

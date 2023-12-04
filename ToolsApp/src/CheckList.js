@@ -6,13 +6,15 @@ import CheckIcon from '@mui/icons-material/Check';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import { CustomToggleButton, MyContext } from './App';
 import HomeRepairServiceIcon from '@mui/icons-material/HomeRepairService';
+import { useNavigate } from 'react-router-dom';
 
 export default function CheckList(props) {
-    const { workplace, machineName, selectedMachines, containerRef } = props;
+    const { machine, workplace, machineName, selectedMachines, containerRef } = props;
     const { selectedWorkplace, setSelectedWorkplace, toolsData, setToolsData } = useContext(MyContext);
     const [items, setItems] = useState(null)
 
     const [maxItemsPerColumn, setMaxItemsPerColumn] = useState(10);
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -40,11 +42,16 @@ export default function CheckList(props) {
 
 
     useEffect(() => {
-      const currentMachineData = toolsData[selectedWorkplace][selectedMachines[machineName]];
+      try {
+      console.log("Selected Machines: ", selectedMachines);
+      console.log("Workplace", workplace);
+      const currentMachineData = toolsData[workplace][machineName];
+      console.log("Current machine data: ", currentMachineData);
+      console.log("Current machine data length: ", currentMachineData?.length);
 
         var tempItems = [];
 
-            for(let i = 0; i < currentMachineData.length; i += maxItemsPerColumn) {
+            for(let i = 0; i < currentMachineData?.length; i += maxItemsPerColumn) {
                 tempItems?.push(
                     <List sx={{ bgcolor: 'background.paper' }}>
             {currentMachineData?.slice(i, i + maxItemsPerColumn).map((toolObject, index) => {
@@ -64,40 +71,27 @@ export default function CheckList(props) {
                       exclusive
                       onChange={(e, newValue) => {
                         console.log("Changing to: ", newValue);
-                        // Create a new state object by spreading the old state
-
-                        
-                        if(currentMachineData[id].dbState != "b") {
+                      
+                        if (!currentMachineData || !currentMachineData[id] || currentMachineData[id].dbState !== "b") {
                           return;
                         }
-                        
-
+                      
                         if (newValue == null) return;
-
+                      
                         setToolsData(prevToolsData => {
-                          // Create a deep copy of the previous state
-                          const updatedToolsData = JSON.parse(JSON.stringify(prevToolsData));
-                        
-                          // Extract the workplace and machine name from selectedMachines
-                          const { workplace, machine_name } = selectedMachines[machineName]; // Assuming selectedMachines[machineName] has the correct structure
-                        
-                          // Check if the specific machine exists in the data
-                          if (updatedToolsData[workplace] && updatedToolsData[workplace][machine_name]) {
-                            // Update the specific tool in the array
-                            if (updatedToolsData[workplace][machine_name][id]) {
-                              updatedToolsData[workplace][machine_name][id] = {
-                                ...updatedToolsData[workplace][machine_name][id],
-                                state: newValue
-                              };
-                            }
-                          }
-                        
-                          // Return the updated state
+
+                      
+                          // Create a shallow copy of prevToolsData
+                          const updatedToolsData = { ...prevToolsData };
+                      
+                          // Update the state of the specific machine
+                          updatedToolsData[workplace][machineName].find(tool => tool.name === name).state = newValue;
+                      
                           return updatedToolsData;
                         });
-                      } }
+                      }}
                     >
-                        {toolsData[selectedMachines[machineName]][id].state == "b" && (
+                        {toolObject.state == "b" && (
                           <CustomToggleButton value="b" title='Wybierz opcje' size='small'>
                         <QuestionMarkIcon color='warning' />
                       </CustomToggleButton>
@@ -136,6 +130,9 @@ export default function CheckList(props) {
         
 
         setItems(tempItems)
+          } catch (error) {
+            window.location.href = "/local-storage-error"
+          }
     }, [toolsData, selectedMachines, machineName, maxItemsPerColumn])
 
 return (

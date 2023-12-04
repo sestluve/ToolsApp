@@ -14,6 +14,7 @@ import { Button, Grid, Paper, Stack, ToggleButton, Typography } from "@mui/mater
 import { createTheme } from '@mui/material/styles';
 import styled from "@emotion/styled";
 import { login } from "./ScanCard";
+import LocalStorageError from "./LocalStorageError";
 
 
 export const MyContext = React.createContext();
@@ -122,6 +123,7 @@ export default function App(props) {
   
   
   
+  
 
 
 
@@ -193,7 +195,7 @@ function handlePasswordChange() {
 
 
 return (
-  <MyContext.Provider value={{ selectedWorkplace, setSelectedWorkplace, showLoadingScreen, actualTime, setActualTime, token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
+  <MyContext.Provider value={{ actualShift, showLoadingScreen, hideLoadingScreen, selectedWorkplace, setSelectedWorkplace, showLoadingScreen, actualTime, setActualTime, token, setToken, userId, name, surname, notify, selectedMachines, setSelectedMachines, toolsData, setToolsData}}>
     <ThemeProvider theme={theme}>
   <Box>
   <Box component="main" sx={{ paddingTop: 15 }}>
@@ -228,6 +230,10 @@ return (
                   <Route exact path="/" element={
                   <div><Main actualShift={actualShift} setToken={setToken} userId={userId} setUserId={handleUserIdChange} name={name} setName={setName} surname={surname} setSurname={setSurname} showLoadingScreen={showLoadingScreen} hideLoadingScreen={hideLoadingScreen}  notify={(action, text) => { notify(action, text) }} /></div>
                   } ></Route>
+
+                  <Route exact path="/local-storage-error" element={
+                    <LocalStorageError />
+                  }></Route>
                   
               </Routes>
           </Router>

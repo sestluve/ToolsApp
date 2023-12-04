@@ -24,11 +24,12 @@ export function initializeToolsData(data) {
           groupedTools[workplace][machineName] = [];
 
           // Iterate over each tool in the machine
-          for (let tool in data[workplace][machineName]) {
-            groupedTools[workplace][machineName][tool] = {
+          for (let toolKey in data[workplace][machineName]) {
+            let tool = data[workplace][machineName][toolKey];
+            groupedTools[workplace][machineName][toolKey] = {
               name: tool.name,
               dbState: tool.db_state,
-              state: tool.db_state // Initially, the state is the same as the dbState
+              state: tool.db_state
             };
           };
         }
@@ -93,7 +94,7 @@ export function login(props, toolsData, setToolsData, tokenValue, actualShift, s
               props.setUserId(data['id'])
               props.setName(data['name'])
               props.setSurname(data['surname'])
-              props.notify("info", "Pomyślnie zalogowano!")
+              props.notify("info", "Pomyślnie zalogowano i odświeżono dane!")
               
         
       } else {

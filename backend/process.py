@@ -101,14 +101,14 @@ def login():
             conn2 = connect_db_apps()
             cur2 = conn2.cursor()
             cur2.execute("""
-    SELECT t.*,
+    SELECT t.id, t.machine_name, t.tool_name, t.workplace,
            tp.tool_state
     FROM tools t
     LEFT JOIN tools_presence tp ON t.tool_name = tp.tool_name
         AND t.machine_name = tp.machine_name
         AND t.workplace = tp.workplace
         AND DATE(tp.timestamp) = CURRENT_DATE
-        AND tp.shift = 0
+        AND tp.shift = %s
 """, (actualShift,))
             result2 = cur2.fetchall()
 
@@ -122,13 +122,11 @@ def login():
                 if workplace not in grouped_tools:
                     grouped_tools[workplace] = {}
                 if machine_name not in grouped_tools[workplace]:
-                    grouped_tools[workplace][machine_name] = {}
+                    grouped_tools[workplace][machine_name] = []
 
                 if tool_state is None:
                     tool_state = "b"
-                if tool_name not in grouped_tools[workplace][machine_name]:
-                    grouped_tools[workplace][machine_name][tool_name] = []
-                grouped_tools[workplace][machine_name][tool_name] = {'name': tool_name, 'db_state': tool_state}
+                grouped_tools[workplace][machine_name].append({'name': tool_name, 'db_state': tool_state})
 
 
 
@@ -198,16 +196,16 @@ def save():
         conn.autocommit = False
 
         # Prepare the INSERT statement
-        query = "INSERT INTO tools_presence (user_id, user_name, user_surname, workplace, tool_name, tool_state, shift) VALUES "
+        query = "INSERT INTO tools_presence (user_id, user_name, user_surname, workplace, machine_name, tool_name, tool_state, shift) VALUES "
 
         # Create a list of value tuples for each tool
         values = []
         for tool in data:
-            value_tuple = (userId, userName, userSurname, tool['workplace'], tool['tool_name'], tool['tool_state'], actualShift)  # Shift is always 0
+            value_tuple = (userId, userName, userSurname, tool['workplace'], tool['machine_name'], tool['tool_name'], tool['tool_state'], actualShift)  # Shift is always 0
             values.append(value_tuple)
 
         # Add the value tuples to the query using a parameterized format
-        args_str = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s,%s)", x).decode('utf-8') for x in values)
+        args_str = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s)", x).decode('utf-8') for x in values)
         query += args_str
 
         # Execute the query
